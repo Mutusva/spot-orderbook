@@ -8,7 +8,7 @@ import (
 )
 
 type OrderbookServer struct {
-	Orderbook ob.OrderBook
+	Orderbook *ob.OrderBook
 }
 
 func (O *OrderbookServer) ProcessLimitOrder(ctx context.Context, req *orderbookpb.LimitOrderRequest) (*orderbookpb.LimitOrderResponse, error)  {

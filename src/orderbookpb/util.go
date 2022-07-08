@@ -7,6 +7,10 @@ import (
 
 func ConvertOrderToOrderpb(order *ob.Order) *Order {
 
+	if order == nil {
+		return &Order{}
+	}
+
 	time := timestamppb.New(order.Time())
 	return &Order{
 		Side:                 int32(order.Side()),
