@@ -5,6 +5,7 @@ import (
 	ob "github.com/muzykantov/orderbook"
 	"github.com/shopspring/decimal"
 	"spotob/src/orderbookpb"
+	obs "spotob/src/orderbookservice"
 )
 
 type OrderbookServer struct {
@@ -22,7 +23,7 @@ func (O *OrderbookServer) ProcessLimitOrder(ctx context.Context, req *orderbookp
 		return nil, err
 	}
 
-	done, partial, partialQuantityProcessed, err := O.Orderbook.ProcessLimitOrder(ob.Side(req.Side), req.OrderId, quantity, price)
+	done, partial, partialQuantityProcessed, err := obs.ProcessLimitOrder(O.Orderbook, ob.Side(req.Side), req.OrderId, quantity, price)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func (O *OrderbookServer) ProcessMarketOrder(ctx context.Context, req *orderbook
 		return nil, err
 	}
 
-	done, partial, partialQuantityProcessed, quantityLeft , err := O.Orderbook.ProcessMarketOrder(ob.Side(req.Side), quantity)
+	done, partial, partialQuantityProcessed, quantityLeft , err := obs.ProcessMarketOrder(O.Orderbook, ob.Side(req.Side), quantity)
 
 	if err != nil {
 		return nil, err
@@ -56,14 +57,14 @@ func (O *OrderbookServer) ProcessMarketOrder(ctx context.Context, req *orderbook
 }
 
 func (O *OrderbookServer) CancelOrder(ctx context.Context, req *orderbookpb.CancelOrderRequest) (*orderbookpb.CancelOrderResponse, error) {
-	order := O.Orderbook.CancelOrder(req.Id)
+	order := obs.CancelOrder(O.Orderbook, req.Id)
 	return &orderbookpb.CancelOrderResponse{
 		Order: orderbookpb.ConvertOrderToOrderpb(order),
 	}, nil
 }
 
 func (O *OrderbookServer) Depth(context.Context, *orderbookpb.Empty) (*orderbookpb.DepthResponse, error) {
-	asks, bids := O.Orderbook.Depth()
+	asks, bids := obs.Depth(O.Orderbook)
 	return &orderbookpb.DepthResponse{
 		Asks: orderbookpb.ToPriceLevelpbs(asks),
 		Bids: orderbookpb.ToPriceLevelpbs(bids),
