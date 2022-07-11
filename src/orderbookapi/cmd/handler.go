@@ -13,7 +13,7 @@ import (
 
 type App struct {
 	OrderBook *ob.OrderBook
-	Router *mux.Router
+	Router    *mux.Router
 }
 
 func (a *App) initializeRoutes() {
@@ -33,7 +33,7 @@ func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
 	var limitOrder models.LimitOrder
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&limitOrder); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload"+err.Error())
 		return
 	}
 	defer r.Body.Close()
@@ -53,19 +53,57 @@ func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
+	var req models.MarketOrderRequest
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	defer r.Body.Close()
+	if err := validateMarketOrderRequest(req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	done, partial, partialQuantityProcessed, quantityLeft, err := obs.ProcessMarketOrder(a.OrderBook, ob.Side(req.Side), req.Quantity)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error processing request")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, models.MarketOrderResponse{
+		Done:                     done,
+		Partial:                  partial,
+		PartialQuantityProcessed: partialQuantityProcessed,
+		QuantityLeft:             quantityLeft,
+	})
 
 }
 
 func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	orderId := vars["id"]
+	if len(orderId) == 0 {
+		respondWithError(w, http.StatusBadRequest, "id cannot be empty")
+		return
+	}
 
+	order := obs.CancelOrder(a.OrderBook, orderId)
+	respondWithJSON(w, http.StatusOK, order)
 }
 
-func (a *App) Depth(w http.ResponseWriter, r *http.Request) {
-
+func (a *App) Depth(w http.ResponseWriter, _ *http.Request) {
+	asks, bids := obs.Depth(a.OrderBook)
+	depth := models.OrderBookDepth{
+		Asks: asks,
+		Bids: bids,
+	}
+	respondWithJSON(w, http.StatusOK, depth)
 }
 
 func validateLimitOrderRequest(lo models.LimitOrder) (*models.LimitOrderType, error) {
-	if lo.Side < 1 || lo.Side > 2 {
+	if lo.Side < 0 || lo.Side > 1 {
 		return nil, errors.New("invalid side. sell(0), sell(1)")
 	}
 
@@ -73,20 +111,41 @@ func validateLimitOrderRequest(lo models.LimitOrder) (*models.LimitOrderType, er
 		return nil, errors.New("invalid order id")
 	}
 
-	if lo.Quantity <= 0 {
+	q, err := decimal.NewFromString(lo.Quantity)
+	if err != nil {
+		return nil, err
+	}
+
+	price, err := decimal.NewFromString(lo.Price)
+	if err != nil {
+		return nil, err
+	}
+
+	if q.IsZero() {
 		return nil, errors.New("invalid quantity, quantity should be not zero")
 	}
 
-	if lo.Price <= 0 {
+	if price.IsZero() {
 		return nil, errors.New("price should be greater than zero")
 	}
 
 	return &models.LimitOrderType{
 		Side:     ob.Side(lo.Side),
 		OrderId:  lo.OrderId,
-		Quantity: decimal.NewFromFloat(lo.Quantity),
-		Price:    decimal.NewFromFloat(lo.Price),
+		Quantity: q,
+		Price:    price,
 	}, nil
+}
+
+func validateMarketOrderRequest(req models.MarketOrderRequest) error {
+	if req.Side < 0 || req.Side > 1 {
+		return errors.New("invalid side. sell(0), sell(1)")
+	}
+
+	if req.Quantity.IsZero() {
+		return errors.New("invalid quantity, quantity should be not zero")
+	}
+	return nil
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
