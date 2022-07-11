@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/gorilla/mux"
 	ob "github.com/muzykantov/orderbook"
-	"github.com/shopspring/decimal"
 	"net/http"
 	"spotob/src/models"
 	obs "spotob/src/orderbookservice"
@@ -111,29 +110,19 @@ func validateLimitOrderRequest(lo models.LimitOrder) (*models.LimitOrderType, er
 		return nil, errors.New("invalid order id")
 	}
 
-	q, err := decimal.NewFromString(lo.Quantity)
-	if err != nil {
-		return nil, err
-	}
-
-	price, err := decimal.NewFromString(lo.Price)
-	if err != nil {
-		return nil, err
-	}
-
-	if q.IsZero() {
+	if lo.Quantity.IsZero() {
 		return nil, errors.New("invalid quantity, quantity should be not zero")
 	}
 
-	if price.IsZero() {
+	if lo.Price.IsZero() {
 		return nil, errors.New("price should be greater than zero")
 	}
 
 	return &models.LimitOrderType{
 		Side:     ob.Side(lo.Side),
 		OrderId:  lo.OrderId,
-		Quantity: q,
-		Price:    price,
+		Quantity: lo.Quantity,
+		Price:    lo.Price,
 	}, nil
 }
 
