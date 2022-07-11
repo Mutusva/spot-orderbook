@@ -7,10 +7,10 @@ import (
 )
 
 type LimitOrder struct {
-	Side     int32  `json:"side"`
-	OrderId  string `json:"order_id"`
-	Quantity string `json:"quantity"`
-	Price    string `json:"price"`
+	Side     int32   `json:"side"`
+	OrderId  string  `json:"order_id"`
+	Quantity Decimal `json:"quantity"`
+	Price    Decimal `json:"price"`
 }
 
 type Order struct {
