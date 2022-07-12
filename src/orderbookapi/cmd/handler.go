@@ -20,6 +20,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/processMarketOrder", a.ProcessMarketOrder).Methods("POST")
 	a.Router.HandleFunc("/cancelOrder/{id}", a.CancelOrder)
 	a.Router.HandleFunc("/depth", a.Depth)
+	a.Router.HandleFunc("/health", a.Health)
 }
 
 func (a *App) Initialize(orderBook *ob.OrderBook) {
@@ -49,6 +50,11 @@ func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
 		Partial:                  partial,
 		PartialQuantityProcessed: partialQuantityProcessed,
 	})
+}
+
+func (a *App) Health(w http.ResponseWriter, r *http.Request) {
+	type data struct{ msg string }
+	respondWithJSON(w, http.StatusOK, data{msg: "health"})
 }
 
 func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
