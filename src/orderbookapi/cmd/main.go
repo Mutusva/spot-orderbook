@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"spotob/src/orderbookapi/handlers"
 	"time"
 )
 
@@ -17,7 +18,7 @@ func main() {
 	port := flag.String("port", "8080", "the port for the server")
 	flag.Parse()
 	o := ob.NewOrderBook()
-	app := App{}
+	app := handlers.App{}
 	app.Initialize(o)
 	fmt.Printf("Listening on port %s\n", *port)
 

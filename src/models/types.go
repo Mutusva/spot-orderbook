@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+//
 type LimitOrder struct {
 	Side     int32   `json:"side"`
 	OrderId  string  `json:"order_id"`
