@@ -1,0 +1,87 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  Decimal:
+    description: number = value * 10 ^ exp
+    title: Decimal represents a fixed-point decimal. It is immutable.
+    type: object
+    x-go-package: github.com/shopspring/decimal
+  LimitOrder:
+    description: |-
+      swagger: model
+      Limit order request
+    properties:
+      order_id:
+        description: |-
+          order id
+          in: string
+        type: string
+        x-go-name: OrderId
+      price:
+        $ref: '#/definitions/Decimal'
+      quantity:
+        $ref: '#/definitions/Decimal'
+      side:
+        description: |-
+          enum 0 for sell and 1 for buy
+          in: int
+        format: int32
+        type: integer
+        x-go-name: Side
+    type: object
+    x-go-package: spotob/src/models
+info:
+  description: Documentation for Spot OrderBook API
+  title: Spot OrderBook API
+  version: 1.0.0
+paths:
+  /cancelOrder/{id}:
+    get:
+      operationId: cancelOrder
+      parameters:
+      - description: id of the order to cancel
+        in: path
+        name: order id
+        required: true
+        schema:
+          description: id of the order to cancel
+          format: int
+          type: integer
+        type: integer
+      responses:
+        "201":
+          $ref: '#/responses/Order'
+        "401":
+          $ref: '#/responses/ErrorResponse'
+      tags:
+      - order
+  /depth:
+    get:
+      operationId: depth
+      responses:
+        "200":
+          $ref: '#/responses/someResponse'
+  /processLimitOrder:
+    post:
+      description: Create a new limit order
+      operationId: processLimitOrder
+      responses:
+        "200":
+          $ref: '#/responses/LimitOrderResponse'
+        "401":
+          $ref: '#/responses/ErrorResponse'
+  /processMarketOrder:
+    post:
+      description: Create a new market order for processing
+      operationId: processMarketOrder
+      responses:
+        "200":
+          $ref: '#/responses/MarketOrderResponse'
+        "401":
+          $ref: '#/responses/ErrorResponse'
+produces:
+- application/json
+schemes:
+- http,https
+swagger: "2.0"

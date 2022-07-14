@@ -18,7 +18,7 @@ ENV PORT=8080
 ENV GO111MODULE=on
 
 # Build the Go app
-RUN go build -o . src/orderbookapi/cmd/main.go
+RUN go build -o . src/orderbookapi/*.go
 
 
 # This container exposes port 8080 to the outside world

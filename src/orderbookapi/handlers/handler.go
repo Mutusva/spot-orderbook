@@ -1,8 +1,20 @@
+// Package classification Spot OrderBook API
+//
+// Documentation for Spot OrderBook API
+//  Schemes: http,https
+//  BasePath: /
+//  Version: 1.0.0
+//  Consumes:
+//  - application/json
+//  Produces:
+//  - application/json
+//  swagger:meta
 package handlers
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 	ob "github.com/muzykantov/orderbook"
 	"net/http"
@@ -21,6 +33,17 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/cancelOrder/{id}", a.CancelOrder)
 	a.Router.HandleFunc("/depth", a.Depth)
 	a.Router.HandleFunc("/health", a.Health)
+
+	// documentation for developers
+	opts := middleware.SwaggerUIOpts{SpecURL: "/swagger.yaml"}
+	sh := middleware.SwaggerUI(opts, nil)
+
+	// documentation for share
+	// opts := middleware.RedocOpts{SpecURL: "./swagger.yaml"}
+	// sh := middleware.Redoc(opts, nil)
+
+	a.Router.Handle("/docs", sh)
+	a.Router.Handle("/swagger.yaml", http.FileServer(http.Dir("./swagger/")))
 }
 
 func (a *App) Initialize(orderBook *ob.OrderBook) {
@@ -29,6 +52,13 @@ func (a *App) Initialize(orderBook *ob.OrderBook) {
 	a.OrderBook = orderBook
 }
 
+//  swagger:route POST /processLimitOrder processLimitOrder
+//  Create a new limit order
+//  responses:
+//    401: ErrorResponse
+//    200: LimitOrderResponse
+
+// ProcessLimitOrder create a limit order for processing
 func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
 	var limitOrder models.LimitOrder
 	decoder := json.NewDecoder(r.Body)
@@ -57,6 +87,13 @@ func (a *App) Health(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, data{msg: "health"})
 }
 
+//  swagger:route POST /processMarketOrder processMarketOrder
+//  Create a new market order for processing
+//  responses:
+//    401: ErrorResponse
+//    200: MarketOrderResponse
+
+// ProcessMarketOrder create a market order for processing
 func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 	var req models.MarketOrderRequest
 	decoder := json.NewDecoder(r.Body)
@@ -86,6 +123,19 @@ func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// swagger:route GET /cancelOrder/{id} order cancelOrder
+//   Responses:
+//     201: Order
+//     401: ErrorResponse
+//   Parameters:
+//     + name: order id
+//       in: path
+//       description: id of the order to cancel
+//       required: true
+//       type: integer
+//       format: int
+
+// CancelOrder cancel a specific order by id
 func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	orderId := vars["id"]
@@ -98,6 +148,9 @@ func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, order)
 }
 
+// swagger:route GET /depth depth
+// Responses:
+//   200: someResponse
 func (a *App) Depth(w http.ResponseWriter, _ *http.Request) {
 	asks, bids := obs.Depth(a.OrderBook)
 	depth := models.OrderBookDepth{
@@ -144,7 +197,8 @@ func validateMarketOrderRequest(req models.MarketOrderRequest) error {
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
-	respondWithJSON(w, code, map[string]string{"error": message})
+	er := models.ErrorResponse{Code: code, Errors: map[string]string{"error": message}}
+	respondWithJSON(w, er.Code, er)
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
