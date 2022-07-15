@@ -1,7 +1,7 @@
 // Package classification Spot OrderBook API
 //
 // Documentation for Spot OrderBook API
-//  Schemes: http,https
+//  Schemes: http
 //  BasePath: /
 //  Version: 1.0.0
 //  Consumes:

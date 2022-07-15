@@ -41,10 +41,12 @@ type ReqLimitOrderBody struct {
 // An Error response
 // swagger: response ErrorResponse
 type ErrorResponse struct {
-	// status code
+	// name code
+	// in: int
 	Code int
 
 	// errors
+	// in: map[string]string
 	Errors map[string]string
 }
 
@@ -101,7 +103,19 @@ type MarketOrderResponse struct {
 	QuantityLeft Decimal `json:"quantityLeft"`
 }
 
-//  swagger: model MarketOrderRequest
+// swagger:parameters order MarketOrderRequest
+type ReqMarketOrderBody struct {
+	// - name: body
+	//  in: body
+	//  description: request body for market order
+	//  schema:
+	//  type: object
+	//     "$ref": "#/definitions/ReqMarketOrderBody"
+	//  required: true
+	Body MarketOrderRequest `json:"body"`
+}
+
+//  swagger: model
 //  Market order request
 type MarketOrderRequest struct {
 

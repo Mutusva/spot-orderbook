@@ -25,10 +25,27 @@ definitions:
       side:
         description: |-
           enum 0 for sell and 1 for buy
-          in: int
+          in: int32
         format: int32
         type: integer
         x-go-name: Side
+    type: object
+    x-go-package: spotob/src/models
+  MarketOrderRequest:
+    description: |-
+      swagger: model
+      Market order request
+    properties:
+      quantity:
+        $ref: '#/definitions/Decimal'
+      side:
+        description: enum 0 for sell and 1 for buy
+        format: int32
+        type: integer
+        x-go-name: Side
+    required:
+    - side
+    - quantity
     type: object
     x-go-package: spotob/src/models
 info:
@@ -83,5 +100,5 @@ paths:
 produces:
 - application/json
 schemes:
-- http,https
+- http
 swagger: "2.0"
