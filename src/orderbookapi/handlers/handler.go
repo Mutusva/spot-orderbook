@@ -12,19 +12,25 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 	ob "github.com/muzykantov/orderbook"
+	"log"
 	"net/http"
 	"spotob/src/models"
 	obs "spotob/src/orderbookservice"
+	rc "spotob/src/redis"
 )
 
 type App struct {
-	OrderBook *ob.OrderBook
-	Router    *mux.Router
+	OrderBook   *ob.OrderBook
+	Router      *mux.Router
+	RedisClient *rc.OpsClient
+	ctx         context.Context
 }
 
 func (a *App) initializeRoutes() {
@@ -46,10 +52,12 @@ func (a *App) initializeRoutes() {
 	a.Router.Handle("/swagger.yaml", http.FileServer(http.Dir("./swagger/")))
 }
 
-func (a *App) Initialize(orderBook *ob.OrderBook) {
+func (a *App) Initialize(ctx context.Context, orderBook *ob.OrderBook, rc *rc.OpsClient) {
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
 	a.OrderBook = orderBook
+	a.RedisClient = rc
+	a.ctx = ctx
 }
 
 //  swagger:route POST /processLimitOrder processLimitOrder
@@ -74,12 +82,37 @@ func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	done, partial, partialQuantityProcessed, err := obs.ProcessLimitOrder(a.OrderBook, lr.Side, lr.OrderId, lr.Quantity, lr.Price)
-	respondWithJSON(w, http.StatusOK, models.LimitOrderResponse{
-		Done:                     done,
-		Partial:                  partial,
-		PartialQuantityProcessed: partialQuantityProcessed,
-	})
+	msgModel := models.LimitOrderMessage{
+		Message: limitOrder,
+		Type:    models.LimitOrderMessageType,
+	}
+
+	msg, err := json.Marshal(msgModel)
+	if err != nil {
+		// log this msg
+		respondWithError(w, http.StatusBadRequest, "could not encode message")
+		return
+	}
+
+	_ = lr
+	err = a.RedisClient.PublishMessage(a.ctx, string(msg))
+	if err != nil {
+		// log this msg
+		respondWithError(w, http.StatusBadRequest, "could not queue message")
+		return
+	}
+
+	/*
+		done, partial, partialQuantityProcessed, err := obs.ProcessLimitOrder(a.OrderBook, lr.Side, lr.OrderId, lr.Quantity, lr.Price)
+		respondWithJSON(w, http.StatusOK, models.LimitOrderResponse{
+			Done:                     done,
+			Partial:                  partial,
+			PartialQuantityProcessed: partialQuantityProcessed,
+		})
+
+	*/
+	respondWithJSON(w, http.StatusOK, "Processing Limit order")
+
 }
 
 func (a *App) Health(w http.ResponseWriter, r *http.Request) {
@@ -207,4 +240,18 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+func (a *App) ProcessOrders(ctx context.Context) {
+
+	defer a.RedisClient.Rc.Close()
+	pubSub := a.RedisClient.Rc.Subscribe(ctx, a.RedisClient.Ch)
+
+	for {
+		msg, err := pubSub.ReceiveMessage(ctx)
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Println(msg.Channel, msg.Payload)
+	}
 }

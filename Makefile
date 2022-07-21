@@ -3,3 +3,7 @@ check_install:
 
 swagger:
    GO111MODULE=on swagger generate spec -o ./swagger.yaml --scan-models
+
+redisDocker:
+   docker run --name redis -d redis
+   docker run -it --rm --link redis redis redis-cli -h redis

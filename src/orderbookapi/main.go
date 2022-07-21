@@ -4,22 +4,35 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	ob "github.com/muzykantov/orderbook"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"spotob/src/orderbookapi/handlers"
+	rc "spotob/src/redis"
 	"time"
 )
 
 func main() {
 
-	port := flag.String("port", "8080", "the port for the server")
+	port := flag.String("server_port", "8080", "the port for the server")
+	redisHost := flag.String("redis_host", "localhost:6379", "redis host")
+	channel := flag.String("redis_channel", "orderbook", "redis order book channel")
+
 	flag.Parse()
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     *redisHost,
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	ctx := context.Background()
+	redisClient := rc.NewOpsClient(rdb, *channel)
 	o := ob.NewOrderBook()
 	app := handlers.App{}
-	app.Initialize(o)
+	app.Initialize(ctx, o, redisClient)
 	fmt.Printf("Listening on port %s\n", *port)
 
 	s := &http.Server{
@@ -29,6 +42,9 @@ func main() {
 		ReadTimeout:  1 * time.Minute,
 		WriteTimeout: 1 * time.Second,
 	}
+
+	// start redis connection
+	go app.ProcessOrders(ctx)
 
 	// graceful shut down - allows cleaning up of resources.
 	go func() {

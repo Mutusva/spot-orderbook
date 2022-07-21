@@ -6,6 +6,14 @@ import (
 	"time"
 )
 
+type MessageType int
+
+var (
+	LimitOrderMessageType  MessageType = 1
+	MarketOrderMessageType MessageType = 2
+	CancelOrderMessageType MessageType = 3
+)
+
 //  swagger: model
 // Limit order request
 type LimitOrder struct {
@@ -119,10 +127,12 @@ type ReqMarketOrderBody struct {
 //  Market order request
 type MarketOrderRequest struct {
 
+	// swagger: model
 	// enum 0 for sell and 1 for buy
 	// required: true
 	Side int32 `json:"side"`
 
+	// swagger: model
 	// quantity
 	// required: true
 	Quantity Decimal `json:"quantity"`
@@ -142,4 +152,19 @@ type OrderBookDepth struct {
 	Bids []*ob.PriceLevel `json:"bids"`
 	// asks
 	Asks []*ob.PriceLevel `json:"asks"`
+}
+
+type LimitOrderMessage struct {
+	Message LimitOrder  `json:"message"`
+	Type    MessageType `json:"message_type"`
+}
+
+type MarketOrderMessage struct {
+	Message MarketOrderRequest `json:"message"`
+	Type    MessageType        `json:"message_type"`
+}
+
+type CancelOrderMessage struct {
+	Message string      `json:"message"`
+	Type    MessageType `json:"message_type"`
 }
