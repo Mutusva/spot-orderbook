@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis/v8"
@@ -30,9 +31,12 @@ func main() {
 
 	ctx := context.Background()
 	redisClient := rc.NewOpsClient(rdb, *channel)
-	o := ob.NewOrderBook()
+
+	odb := readFile("orderbook.json")
+
+	// o := ob.NewOrderBook()
 	app := handlers.App{}
-	app.Initialize(ctx, o, redisClient)
+	app.Initialize(ctx, odb, redisClient)
 	fmt.Printf("Listening on port %s\n", *port)
 
 	s := &http.Server{
@@ -62,5 +66,41 @@ func main() {
 	log.Println("Received terminate, graceful shutdown", sig)
 
 	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	saveAppState(odb)
 	s.Shutdown(tc)
+}
+
+func readFile(s string) *ob.OrderBook {
+	b, err := os.ReadFile(s)
+	if err != nil {
+		log.Println("Error reading file or file does not exits")
+	}
+
+	if len(b) == 0 {
+		return ob.NewOrderBook()
+	}
+	var o ob.OrderBook
+	err = json.Unmarshal(b, &o)
+	if err != nil {
+		log.Println("Error creating order book from file")
+		return ob.NewOrderBook()
+	}
+
+	return &o
+}
+
+func saveAppState(orderBook *ob.OrderBook) {
+	obStr, err := orderBook.MarshalJSON()
+	if err != nil {
+		log.Println(err)
+	}
+
+	f, err := os.Create("orderbook.json")
+	if err != nil {
+		log.Println(err)
+	}
+	_, err = f.Write(obStr)
+	if err != nil {
+		log.Println(err)
+	}
 }

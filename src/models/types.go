@@ -149,8 +149,10 @@ type LimitOrderType struct {
 // depth response
 type OrderBookDepth struct {
 	// bids
+	// swagger: model
 	Bids []*ob.PriceLevel `json:"bids"`
 	// asks
+	// swagger: model
 	Asks []*ob.PriceLevel `json:"asks"`
 }
 

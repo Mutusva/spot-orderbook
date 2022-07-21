@@ -114,7 +114,7 @@ func (a *App) Health(w http.ResponseWriter, r *http.Request) {
 //  Create a new market order for processing
 //  responses:
 //    401: ErrorResponse
-//    200: MarketOrderResponse
+//    200: string
 
 // ProcessMarketOrder create a market order for processing
 func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
@@ -155,7 +155,7 @@ func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 
 // swagger:route GET /cancelOrder/{id} order cancelOrder
 //   Responses:
-//     201: Order
+//     201: string
 //     401: ErrorResponse
 //   Parameters:
 //     + name: order id
