@@ -21,6 +21,7 @@ func main() {
 	port := flag.String("server_port", "8080", "the port for the server")
 	redisHost := flag.String("redis_host", "localhost:6379", "redis host")
 	channel := flag.String("redis_channel", "orderbook", "redis order book channel")
+	orderBkLoc := flag.String("ob_fpath", "orderbook.json", "order book persistance location")
 
 	flag.Parse()
 	rdb := redis.NewClient(&redis.Options{
@@ -32,7 +33,7 @@ func main() {
 	ctx := context.Background()
 	redisClient := rc.NewOpsClient(rdb, *channel)
 
-	odb := readFile("orderbook.json")
+	odb := readFile(*orderBkLoc)
 
 	// o := ob.NewOrderBook()
 	app := handlers.App{}
@@ -66,7 +67,7 @@ func main() {
 	log.Println("Received terminate, graceful shutdown", sig)
 
 	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	saveAppState(odb)
+	saveAppState(odb, *orderBkLoc)
 	s.Shutdown(tc)
 }
 
@@ -89,13 +90,13 @@ func readFile(s string) *ob.OrderBook {
 	return &o
 }
 
-func saveAppState(orderBook *ob.OrderBook) {
+func saveAppState(orderBook *ob.OrderBook, loc string) {
 	obStr, err := orderBook.MarshalJSON()
 	if err != nil {
 		log.Println(err)
 	}
 
-	f, err := os.Create("orderbook.json")
+	f, err := os.Create(loc)
 	if err != nil {
 		log.Println(err)
 	}
