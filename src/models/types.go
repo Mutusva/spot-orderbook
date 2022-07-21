@@ -154,6 +154,10 @@ type OrderBookDepth struct {
 	Asks []*ob.PriceLevel `json:"asks"`
 }
 
+type RedisOrderMessageType struct {
+	Type MessageType `json:"message_type"`
+}
+
 type LimitOrderMessage struct {
 	Message LimitOrder  `json:"message"`
 	Type    MessageType `json:"message_type"`

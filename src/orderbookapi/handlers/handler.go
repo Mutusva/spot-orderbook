@@ -101,16 +101,6 @@ func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "could not queue message")
 		return
 	}
-
-	/*
-		done, partial, partialQuantityProcessed, err := obs.ProcessLimitOrder(a.OrderBook, lr.Side, lr.OrderId, lr.Quantity, lr.Price)
-		respondWithJSON(w, http.StatusOK, models.LimitOrderResponse{
-			Done:                     done,
-			Partial:                  partial,
-			PartialQuantityProcessed: partialQuantityProcessed,
-		})
-
-	*/
 	respondWithJSON(w, http.StatusOK, "Processing Limit order")
 
 }
@@ -141,18 +131,25 @@ func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	done, partial, partialQuantityProcessed, quantityLeft, err := obs.ProcessMarketOrder(a.OrderBook, ob.Side(req.Side), req.Quantity)
+	msgModel := models.MarketOrderMessage{
+		Message: req,
+		Type:    models.MarketOrderMessageType,
+	}
+
+	msg, err := json.Marshal(msgModel)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error processing request")
+		// log this msg
+		respondWithError(w, http.StatusBadRequest, "could not encode message")
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, models.MarketOrderResponse{
-		Done:                     done,
-		Partial:                  partial,
-		PartialQuantityProcessed: partialQuantityProcessed,
-		QuantityLeft:             quantityLeft,
-	})
+	err = a.RedisClient.PublishMessage(a.ctx, string(msg))
+	if err != nil {
+		// log this msg
+		respondWithError(w, http.StatusBadRequest, "could not queue message")
+		return
+	}
+	respondWithJSON(w, http.StatusOK, "Processing Market order")
 
 }
 
@@ -177,8 +174,25 @@ func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order := obs.CancelOrder(a.OrderBook, orderId)
-	respondWithJSON(w, http.StatusOK, order)
+	msgModel := models.CancelOrderMessage{
+		Message: orderId,
+		Type:    models.CancelOrderMessageType,
+	}
+
+	msg, err := json.Marshal(msgModel)
+	if err != nil {
+		// log this msg
+		respondWithError(w, http.StatusBadRequest, "could not encode message")
+		return
+	}
+
+	err = a.RedisClient.PublishMessage(a.ctx, string(msg))
+	if err != nil {
+		// log this msg
+		respondWithError(w, http.StatusBadRequest, "could not queue message")
+		return
+	}
+	respondWithJSON(w, http.StatusOK, "Canceling order request sent")
 }
 
 // swagger:route GET /depth depth
@@ -252,6 +266,63 @@ func (a *App) ProcessOrders(ctx context.Context) {
 		if err != nil {
 			log.Println(err)
 		}
-		fmt.Println(msg.Channel, msg.Payload)
+
+		data := make(map[string]interface{})
+		err = json.Unmarshal([]byte(msg.Payload), &data)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		mt, ok := data["message_type"].(float64)
+		if !ok {
+			//log.Println(err)
+			continue
+		}
+		// log this to kibana or something
+		fmt.Println(msg.Channel, msg.Payload, mt)
+		ob.NewOrderBook()
+
+		processMessageType(a.OrderBook, models.MessageType(int32(mt)), msg.Payload)
 	}
+}
+
+func processMessageType(o *ob.OrderBook, mt models.MessageType, payload string) {
+	switch mt {
+	case models.LimitOrderMessageType:
+		var orderMsg models.LimitOrderMessage
+		err := json.Unmarshal([]byte(payload), &orderMsg)
+		if err != nil {
+			log.Println(err)
+		}
+
+		_, _, _, err = obs.ProcessLimitOrder(o, ob.Side(orderMsg.Message.Side), orderMsg.Message.OrderId, orderMsg.Message.Quantity, orderMsg.Message.Price)
+		if err != nil {
+			log.Println(err)
+		}
+		break
+
+	case models.MarketOrderMessageType:
+		var orderMsg models.MarketOrderMessage
+		err := json.Unmarshal([]byte(payload), &orderMsg)
+		if err != nil {
+			log.Println(err)
+		}
+
+		_, _, _, _, err = obs.ProcessMarketOrder(o, ob.Side(orderMsg.Message.Side), orderMsg.Message.Quantity)
+		if err != nil {
+			log.Println(err)
+		}
+		break
+
+	case models.CancelOrderMessageType:
+		var orderMsg models.CancelOrderMessage
+		err := json.Unmarshal([]byte(payload), &orderMsg)
+		if err != nil {
+			log.Println(err)
+		}
+		_ = obs.CancelOrder(o, orderMsg.Message)
+		break
+	}
+
 }
