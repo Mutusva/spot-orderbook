@@ -49,9 +49,6 @@ func main() {
 		WriteTimeout: 1 * time.Second,
 	}
 
-	// start redis connection
-	go app.ProcessOrders(ctx)
-
 	// graceful shut down - allows cleaning up of resources.
 	go func() {
 		err := s.ListenAndServe()

@@ -99,15 +99,19 @@ type LimitOrderResponse struct {
 //  Market order response
 type MarketOrderResponse struct {
 	// Orders that are done
+	// swagger: model
 	Done []*ob.Order `json:"done"`
 
 	// Partially done orders
+	// swagger: model
 	Partial *ob.Order `json:"partial"`
 
 	// Quantity of orders that have been partially completed
+	// swagger: model
 	PartialQuantityProcessed Decimal `json:"partialQuantityProcessed"`
 
 	// Quantity of orders left
+	// swagger: model
 	QuantityLeft Decimal `json:"quantityLeft"`
 }
 

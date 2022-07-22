@@ -76,32 +76,23 @@ func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	lr, err := validateLimitOrderRequest(limitOrder)
+	lr, err := validateLimitOrderRequest(&limitOrder)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	msgModel := models.LimitOrderMessage{
-		Message: limitOrder,
-		Type:    models.LimitOrderMessageType,
-	}
-
-	msg, err := json.Marshal(msgModel)
+	done, partial, partialQuantityProcessed, err := obs.ProcessLimitOrder(a.OrderBook, lr.Side, lr.OrderId, lr.Quantity, lr.Price)
 	if err != nil {
 		// log this msg
-		respondWithError(w, http.StatusBadRequest, "could not encode message")
+		respondWithError(w, http.StatusBadRequest, "error processing limit order")
 		return
 	}
-
-	_ = lr
-	err = a.RedisClient.PublishMessage(a.ctx, string(msg))
-	if err != nil {
-		// log this msg
-		respondWithError(w, http.StatusBadRequest, "could not queue message")
-		return
-	}
-	respondWithJSON(w, http.StatusOK, "Processing Limit order")
+	respondWithJSON(w, http.StatusOK, models.LimitOrderResponse{
+		Done:                     done,
+		Partial:                  partial,
+		PartialQuantityProcessed: partialQuantityProcessed,
+	})
 
 }
 
@@ -114,7 +105,7 @@ func (a *App) Health(w http.ResponseWriter, r *http.Request) {
 //  Create a new market order for processing
 //  responses:
 //    401: ErrorResponse
-//    200: string
+//    200: MarketOrderResponse
 
 // ProcessMarketOrder create a market order for processing
 func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
@@ -126,30 +117,23 @@ func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
-	if err := validateMarketOrderRequest(req); err != nil {
+	if err := validateMarketOrderRequest(&req); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	msgModel := models.MarketOrderMessage{
-		Message: req,
-		Type:    models.MarketOrderMessageType,
-	}
-
-	msg, err := json.Marshal(msgModel)
+	done, partial, partialQuantityProcessed, quantityLeft, err := obs.ProcessMarketOrder(a.OrderBook, ob.Side(req.Side), req.Quantity)
 	if err != nil {
 		// log this msg
-		respondWithError(w, http.StatusBadRequest, "could not encode message")
+		respondWithError(w, http.StatusBadRequest, "Error processing market order")
 		return
 	}
-
-	err = a.RedisClient.PublishMessage(a.ctx, string(msg))
-	if err != nil {
-		// log this msg
-		respondWithError(w, http.StatusBadRequest, "could not queue message")
-		return
-	}
-	respondWithJSON(w, http.StatusOK, "Processing Market order")
+	respondWithJSON(w, http.StatusOK, models.MarketOrderResponse{
+		Done:                     done,
+		Partial:                  partial,
+		PartialQuantityProcessed: partialQuantityProcessed,
+		QuantityLeft:             quantityLeft,
+	})
 
 }
 
@@ -174,25 +158,14 @@ func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msgModel := models.CancelOrderMessage{
-		Message: orderId,
-		Type:    models.CancelOrderMessageType,
-	}
-
-	msg, err := json.Marshal(msgModel)
-	if err != nil {
-		// log this msg
-		respondWithError(w, http.StatusBadRequest, "could not encode message")
-		return
-	}
-
-	err = a.RedisClient.PublishMessage(a.ctx, string(msg))
-	if err != nil {
-		// log this msg
-		respondWithError(w, http.StatusBadRequest, "could not queue message")
-		return
-	}
-	respondWithJSON(w, http.StatusOK, "Canceling order request sent")
+	order := obs.CancelOrder(a.OrderBook, orderId)
+	respondWithJSON(w, http.StatusOK, models.Order{
+		Side:      int32(order.Side()),
+		Id:        order.ID(),
+		Timestamp: order.Time(),
+		Quantity:  order.Quantity(),
+		Price:     order.Price(),
+	})
 }
 
 // swagger:route GET /depth depth
@@ -207,7 +180,7 @@ func (a *App) Depth(w http.ResponseWriter, _ *http.Request) {
 	respondWithJSON(w, http.StatusOK, depth)
 }
 
-func validateLimitOrderRequest(lo models.LimitOrder) (*models.LimitOrderType, error) {
+func validateLimitOrderRequest(lo *models.LimitOrder) (*models.LimitOrderType, error) {
 	if lo.Side < 0 || lo.Side > 1 {
 		return nil, errors.New("invalid side. sell(0), sell(1)")
 	}
@@ -232,7 +205,7 @@ func validateLimitOrderRequest(lo models.LimitOrder) (*models.LimitOrderType, er
 	}, nil
 }
 
-func validateMarketOrderRequest(req models.MarketOrderRequest) error {
+func validateMarketOrderRequest(req *models.MarketOrderRequest) error {
 	if req.Side < 0 || req.Side > 1 {
 		return errors.New("invalid side. sell(0), sell(1)")
 	}
