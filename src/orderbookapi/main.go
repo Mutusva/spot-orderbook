@@ -16,12 +16,14 @@ import (
 	"time"
 )
 
+var obKey = "orderbook"
+
 func main() {
 
 	port := flag.String("server_port", "8080", "the port for the server")
 	redisHost := flag.String("redis_host", "localhost:6379", "redis host")
 	channel := flag.String("redis_channel", "orderbook", "redis order book channel")
-	orderBkLoc := flag.String("ob_fpath", "orderbook.json", "order book persistance location")
+	// orderBkLoc := flag.String("ob_fpath", "orderbook.json", "order book persistance location")
 
 	flag.Parse()
 	rdb := redis.NewClient(&redis.Options{
@@ -33,9 +35,8 @@ func main() {
 	ctx := context.Background()
 	redisClient := rc.NewOpsClient(rdb, *channel)
 
-	odb := readFile(*orderBkLoc)
+	odb := getSavedOrderBook(ctx, redisClient, obKey)
 
-	// o := ob.NewOrderBook()
 	app := handlers.App{}
 	app.Initialize(ctx, odb, redisClient)
 	fmt.Printf("Listening on port %s\n", *port)
@@ -67,40 +68,36 @@ func main() {
 	log.Println("Received terminate, graceful shutdown", sig)
 
 	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	saveAppState(odb, *orderBkLoc)
+	saveAppState(ctx, odb, redisClient, obKey)
 	s.Shutdown(tc)
 }
 
-func readFile(s string) *ob.OrderBook {
-	b, err := os.ReadFile(s)
+func getSavedOrderBook(ctx context.Context, rdb *rc.OpsClient, key string) *ob.OrderBook {
+	orderBk, err := rdb.GetSavedOrderBook(ctx, key)
 	if err != nil {
-		log.Println("Error reading file or file does not exits")
+		log.Println("cannot create order book from redis " + err.Error())
+		return ob.NewOrderBook()
 	}
 
-	if len(b) == 0 {
+	if len(orderBk) == 0 {
 		return ob.NewOrderBook()
 	}
 	var o ob.OrderBook
-	err = json.Unmarshal(b, &o)
+	err = json.Unmarshal([]byte(orderBk), &o)
 	if err != nil {
 		log.Println("Error creating order book from file")
 		return ob.NewOrderBook()
 	}
-
 	return &o
 }
 
-func saveAppState(orderBook *ob.OrderBook, loc string) {
+func saveAppState(ctx context.Context, orderBook *ob.OrderBook, rdb *rc.OpsClient, key string) {
 	obStr, err := orderBook.MarshalJSON()
 	if err != nil {
 		log.Println(err)
 	}
 
-	f, err := os.Create(loc)
-	if err != nil {
-		log.Println(err)
-	}
-	_, err = f.Write(obStr)
+	err = rdb.SaveOrderBook(ctx, key, string(obStr))
 	if err != nil {
 		log.Println(err)
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/go-redis/redis/v8"
+	"log"
+	"time"
 )
 
 type OpsClient struct {
@@ -26,6 +28,20 @@ func (c *OpsClient) PublishMessage(ctx context.Context, msg string) error {
 	return nil
 }
 
-func (c *OpsClient) ReceiveMessage(ctx context.Context) string {
-	return ""
+func (c *OpsClient) SaveOrderBook(ctx context.Context, key string, orderBook string) error {
+	err := c.Rc.Set(ctx, key, orderBook, time.Minute*24).Err()
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	return nil
+}
+
+func (c *OpsClient) GetSavedOrderBook(ctx context.Context, key string) (string, error) {
+	val, err := c.Rc.Get(ctx, key).Result()
+	if err != nil {
+		return "", err
+	}
+
+	return val, nil
 }
