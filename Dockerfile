@@ -20,6 +20,8 @@ ENV GO111MODULE=on
 # Build the Go app
 RUN go build -o . src/orderbookapi/*.go
 
+COPY src/orderbookapi/swagger/swagger.yaml ./swagger/swagger.yaml
+
 
 # This container exposes port 8080 to the outside world
 EXPOSE 8080

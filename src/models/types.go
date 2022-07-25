@@ -14,51 +14,69 @@ var (
 	CancelOrderMessageType MessageType = 3
 )
 
-//  swagger: model
+// swagger:parameters LimitOrder
 // Limit order request
 type LimitOrder struct {
 	// enum 0 for sell and 1 for buy
-	// in: int32
+	//
+	// in: query
+	// example: 0
 	Side int32 `json:"side"`
 
 	// order id
-	// in: string
+	//
+	// in: query
+	// example: order-1
 	OrderId string `json:"order_id"`
 
 	// quantity
-	// in: Decimal
+	//
+	// in: query
+	// example: 4
 	Quantity Decimal `json:"quantity"`
 
 	// price
-	// in: Decimal
+	//
+	// in: query
+	// example: 4.5
 	Price Decimal `json:"price"`
 }
 
-// swagger:parameters order LimitOrderRequest
+// swagger:parameters ProcessLimitOrder
 type ReqLimitOrderBody struct {
 	// - name: body
 	//  in: body
 	//  description: request body for limit order
 	//  schema:
-	//  type: object
-	//     "$ref": "#/definitions/ReqLimitOrderBody"
+	////  type: object
+	////     "$ref": "#/definitions/ReqLimitOrderBody"
 	//  required: true
-	Body LimitOrder `json:"body"`
+	LimitOrder *LimitOrder
 }
 
 // An Error response
-// swagger: response ErrorResponse
+// swagger:response
 type ErrorResponse struct {
+	// The error message
 	// name code
-	// in: int
-	Code int
+	Code int `json:"code"`
 
 	// errors
-	// in: map[string]string
-	Errors map[string]string
+	Errors map[string]string `json:"errors"`
 }
 
-//  swagger: model Order
+// swagger: response ErrorResponse
+type ValidationError struct {
+	// - name: error
+	//  in: body
+	//  description: request body for limit order
+	//  schema:
+	//  type: object
+	//    "$ref": "#/definitions/ErrorResponse"
+	Body *ErrorResponse
+}
+
+// swagger: model
 // represents an order whether a buy or sell
 type Order struct {
 	// enum 0 for sell and 1 for buy
@@ -82,8 +100,7 @@ type Order struct {
 	Price Decimal `json:"price"`
 }
 
-//  swagger: response LimitOrderResponse
-//  Limit order response
+// swagger: model
 type LimitOrderResponse struct {
 	// Orders that are done
 	Done []*ob.Order `json:"done"`
@@ -95,39 +112,54 @@ type LimitOrderResponse struct {
 	PartialQuantityProcessed Decimal `json:"partialQuantityProcessed"`
 }
 
-//  swagger: response MarketOrderResponse
-//  Market order response
+// swagger: response
+type ResLimitOrder struct {
+	// - name: limit order response
+	//  in: body
+	//  description: limit order response
+	LimitOrderResponse *LimitOrderResponse
+}
+
+//  swagger: model
 type MarketOrderResponse struct {
+	// The Market Order response
 	// Orders that are done
-	// swagger: model
 	Done []*ob.Order `json:"done"`
 
 	// Partially done orders
-	// swagger: model
 	Partial *ob.Order `json:"partial"`
 
 	// Quantity of orders that have been partially completed
-	// swagger: model
 	PartialQuantityProcessed Decimal `json:"partialQuantityProcessed"`
 
 	// Quantity of orders left
-	// swagger: model
 	QuantityLeft Decimal `json:"quantityLeft"`
 }
 
-// swagger:parameters order MarketOrderRequest
+// swagger: response
+type ResMarketOrder struct {
+	// - name: marketorderresponse
+	//  in: body
+	//  description: market order response
+	//  schema:
+	//  type: object
+	//     "$ref": "#/definitions/MarketOrderResponse"
+	MarketOrderResponse *MarketOrderResponse
+}
+
+// swagger:parameters MarketOrderRequest
 type ReqMarketOrderBody struct {
 	// - name: body
-	//  in: body
+	//  in: query
 	//  description: request body for market order
 	//  schema:
 	//  type: object
 	//     "$ref": "#/definitions/ReqMarketOrderBody"
 	//  required: true
-	Body MarketOrderRequest `json:"body"`
+	MarketOrderRequest *MarketOrderRequest
 }
 
-//  swagger: model
+//  swagger: parameters
 //  Market order request
 type MarketOrderRequest struct {
 
@@ -142,6 +174,13 @@ type MarketOrderRequest struct {
 	Quantity Decimal `json:"quantity"`
 }
 
+// swagger: response Order
+type OrderResponse struct {
+	// Order response
+	// in: body
+	Order Order
+}
+
 type LimitOrderType struct {
 	Side     ob.Side
 	OrderId  string
@@ -149,8 +188,8 @@ type LimitOrderType struct {
 	Price    Decimal
 }
 
-// swagger: response OrderBookDepth
 // depth response
+// swagger: response OrderBookDepth
 type OrderBookDepth struct {
 	// bids
 	// swagger: model

@@ -8,14 +8,13 @@ definitions:
     type: object
     x-go-package: github.com/shopspring/decimal
   LimitOrder:
-    description: |-
-      swagger: model
-      Limit order request
     properties:
       order_id:
         description: |-
           order id
-          in: string
+
+          in: query
+        example: order-1
         type: string
         x-go-name: OrderId
       price:
@@ -25,7 +24,9 @@ definitions:
       side:
         description: |-
           enum 0 for sell and 1 for buy
-          in: int32
+
+          in: query
+        example: 0
         format: int32
         type: integer
         x-go-name: Side
@@ -33,13 +34,15 @@ definitions:
     x-go-package: spotob/src/models
   MarketOrderRequest:
     description: |-
-      swagger: model
+      swagger: parameters
       Market order request
     properties:
       quantity:
         $ref: '#/definitions/Decimal'
       side:
-        description: enum 0 for sell and 1 for buy
+        description: |-
+          swagger: model
+          enum 0 for sell and 1 for buy
         format: int32
         type: integer
         x-go-name: Side
@@ -67,8 +70,8 @@ paths:
           type: integer
         type: integer
       responses:
-        "201":
-          $ref: '#/responses/Order'
+        "200":
+          $ref: '#/responses/order'
         "401":
           $ref: '#/responses/ErrorResponse'
       tags:
@@ -78,27 +81,67 @@ paths:
       operationId: depth
       responses:
         "200":
-          $ref: '#/responses/someResponse'
+          $ref: '#/responses/OrderBookDepth'
+        "401":
+          $ref: '#/responses/ErrorResponse'
   /processLimitOrder:
     post:
       description: Create a new limit order
       operationId: processLimitOrder
+      parameters:
+      - in: body
+        name: limit order
+        required: true
+        schema:
+          $ref: '#/definitions/object'
+          format: LimitOrderRequest
+          type: object
+        type: object
       responses:
         "200":
-          $ref: '#/responses/LimitOrderResponse'
+          $ref: '#/responses/ResLimitOrder'
         "401":
+          $ref: '#/responses/ErrorResponse'
+        "404":
+          $ref: '#/responses/ErrorResponse'
+        "500":
           $ref: '#/responses/ErrorResponse'
   /processMarketOrder:
     post:
       description: Create a new market order for processing
       operationId: processMarketOrder
+      parameters:
+      - in: body
+        name: market order
+        required: true
+        schema:
+          $ref: '#/definitions/MarketOrderRequest'
+          format: object
+          type: object
+        type: object
       responses:
         "200":
-          $ref: '#/responses/MarketOrderResponse'
+          $ref: '#/responses/ResMarketOrder'
         "401":
           $ref: '#/responses/ErrorResponse'
 produces:
 - application/json
+responses:
+  ErrorResponse:
+    description: An Error response
+    headers:
+      code:
+        description: |-
+          The error message
+          name code
+        format: int64
+        type: integer
+      errors:
+        description: errors
+    schema:
+      additionalProperties:
+        type: string
+      type: object
 schemes:
 - http
 swagger: "2.0"

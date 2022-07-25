@@ -64,7 +64,15 @@ func (a *App) Initialize(ctx context.Context, orderBook *ob.OrderBook, rc *rc.Op
 //  Create a new limit order
 //  responses:
 //    401: ErrorResponse
-//    200: LimitOrderResponse
+//    404: ErrorResponse
+//    500: ErrorResponse
+//    200: ResLimitOrder
+//   Parameters:
+//     + name: limit order
+//       in: body
+//       required: true
+//       type: object
+//       format: LimitOrderRequest
 
 // ProcessLimitOrder create a limit order for processing
 func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +113,13 @@ func (a *App) Health(w http.ResponseWriter, r *http.Request) {
 //  Create a new market order for processing
 //  responses:
 //    401: ErrorResponse
-//    200: MarketOrderResponse
+//    200: ResMarketOrder
+//   Parameters:
+//     + name: market order
+//       in: body
+//       required: true
+//       type: MarketOrderRequest
+//       format: object
 
 // ProcessMarketOrder create a market order for processing
 func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +153,7 @@ func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 
 // swagger:route GET /cancelOrder/{id} order cancelOrder
 //   Responses:
-//     201: string
+//     200: order
 //     401: ErrorResponse
 //   Parameters:
 //     + name: order id
@@ -170,7 +184,8 @@ func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
 
 // swagger:route GET /depth depth
 // Responses:
-//   200: someResponse
+//   200: OrderBookDepth
+//   401: ErrorResponse
 func (a *App) Depth(w http.ResponseWriter, _ *http.Request) {
 	asks, bids := obs.Depth(a.OrderBook)
 	depth := models.OrderBookDepth{
