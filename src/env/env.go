@@ -8,6 +8,7 @@ type RedisConfig struct {
 	Port     string
 }
 
+// GetRedisConfig TODO: read the config from file
 func GetRedisConfig(env string) *RedisConfig {
 	setEnvironmentVariable(env)
 	return &RedisConfig{
@@ -15,10 +16,6 @@ func GetRedisConfig(env string) *RedisConfig {
 		Password: os.Getenv("REDIS_PWD"),
 		Port:     os.Getenv("REDIS_PORT"),
 	}
-}
-
-func (r *RedisConfig) IsProd() {
-
 }
 
 func setEnvironmentVariable(env string) {
