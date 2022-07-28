@@ -39,7 +39,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/cancelOrder/{id}", a.CancelOrder)
 	a.Router.HandleFunc("/depth", a.Depth)
 	a.Router.HandleFunc("/health", a.Health)
-
+	/// mux.CORSMethodMiddleware(a.Router)
 	// documentation for developers
 	opts := middleware.SwaggerUIOpts{SpecURL: "/swagger.yaml"}
 	sh := middleware.SwaggerUI(opts, nil)

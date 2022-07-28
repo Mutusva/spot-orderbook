@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"spotob/src/env"
 	"spotob/src/orderbookapi/handlers"
 	rc "spotob/src/redis"
 	"time"
@@ -21,15 +22,15 @@ var obKey = "orderbook"
 func main() {
 
 	port := flag.String("server_port", "8080", "the port for the server")
-	redisHost := flag.String("redis_host", "localhost:6379", "redis host")
+	environment := flag.String("env", "dev", "redis host")
 	channel := flag.String("redis_channel", "orderbook", "redis order book channel")
-	// orderBkLoc := flag.String("ob_fpath", "orderbook.json", "order book persistance location")
-
 	flag.Parse()
+
+	redisConfig := env.GetRedisConfig(*environment)
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     *redisHost,
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     redisConfig.Host + ":" + redisConfig.Port,
+		Password: redisConfig.Port,
+		DB:       0, // use default DB
 	})
 
 	ctx := context.Background()
