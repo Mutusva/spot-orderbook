@@ -29,7 +29,7 @@ func main() {
 	redisConfig := env.GetRedisConfig(*environment)
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     redisConfig.Host + ":" + redisConfig.Port,
-		Password: redisConfig.Port,
+		Password: redisConfig.Password,
 		DB:       0, // use default DB
 	})
 
