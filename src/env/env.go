@@ -21,7 +21,7 @@ func GetRedisConfig(env string) *RedisConfig {
 func setEnvironmentVariable(env string) {
 	if env == "prod" {
 		os.Setenv("REDIS_HOST", "172.30.29.69")
-		os.Setenv("REDIS_PWD", "Hjyloa4n9l")
+		os.Setenv("REDIS_PWD", "Hjyloa4n9lkM4aelooVie8lai2euBhodse")
 		os.Setenv("REDIS_PORT", "6379")
 	} else {
 		os.Setenv("REDIS_HOST", "localhost")

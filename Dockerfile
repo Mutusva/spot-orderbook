@@ -24,7 +24,7 @@ COPY src/orderbookapi/swagger/swagger.yaml ./swagger/swagger.yaml
 
 
 # This container exposes port 8080 to the outside world
-EXPOSE 8080
+EXPOSE $PORT
 
 # Run the binary program produced by `go install`
-CMD ["./main"]
+CMD ["./main", "-env=prod"]
