@@ -26,10 +26,10 @@ func main() {
 	channel := flag.String("redis_channel", "orderbook", "redis order book channel")
 	flag.Parse()
 
-	redisConfig := env.GetRedisConfig(*environment)
+	appConfig := env.GetRedisConfig(*environment)
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     redisConfig.Host + ":" + redisConfig.Port,
-		Password: redisConfig.Password,
+		Addr:     appConfig.RedisHost + ":" + appConfig.RedisPort,
+		Password: appConfig.RedisPassword,
 		DB:       0, // use default DB
 	})
 

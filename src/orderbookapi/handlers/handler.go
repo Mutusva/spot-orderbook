@@ -21,6 +21,7 @@ import (
 	ob "github.com/muzykantov/orderbook"
 	"log"
 	"net/http"
+	"spotob/src/env"
 	"spotob/src/models"
 	obs "spotob/src/orderbookservice"
 	rc "spotob/src/redis"
@@ -48,8 +49,13 @@ func (a *App) initializeRoutes() {
 	// opts := middleware.RedocOpts{SpecURL: "./swagger.yaml"}
 	// sh := middleware.Redoc(opts, nil)
 
+	swaggerPath := "./swagger/"
+	if !env.IsProd() {
+		swaggerPath = "./src/orderbookapi/swagger/"
+	}
+
 	a.Router.Handle("/docs", sh)
-	a.Router.Handle("/swagger.yaml", http.FileServer(http.Dir("./swagger/")))
+	a.Router.Handle("/swagger.yaml", http.FileServer(http.Dir(swaggerPath)))
 }
 
 func (a *App) Initialize(ctx context.Context, orderBook *ob.OrderBook, rc *rc.OpsClient) {
