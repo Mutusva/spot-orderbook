@@ -14,45 +14,40 @@ var (
 	CancelOrderMessageType MessageType = 3
 )
 
-// swagger:parameters LimitOrder
+// swagger:model
 // Limit order request
 type LimitOrder struct {
 	// enum 0 for sell and 1 for buy
-	//
-	// in: query
+	// Side
+	// required: true
 	// example: 0
 	Side int32 `json:"side"`
 
-	// order id
-	//
-	// in: query
+	// OrderId
+	// required: true
 	// example: order-1
 	OrderId string `json:"order_id"`
 
 	// quantity
-	//
-	// in: query
-	// example: 4
+	// required: true
+	// example: 4.0
 	Quantity Decimal `json:"quantity"`
 
 	// price
-	//
-	// in: query
+	// required: true
 	// example: 4.5
 	Price Decimal `json:"price"`
 }
 
-// swagger:parameters ProcessLimitOrder
+/*
+
+// swagger:model
 type ReqLimitOrderBody struct {
-	// - name: body
 	//  in: body
-	//  description: request body for limit order
-	//  schema:
-	////  type: object
-	////     "$ref": "#/definitions/ReqLimitOrderBody"
-	//  required: true
 	LimitOrder *LimitOrder
 }
+
+*/
 
 // An Error response
 // swagger:response
@@ -70,21 +65,21 @@ type ValidationError struct {
 	// - name: error
 	//  in: body
 	//  description: request body for limit order
-	//  schema:
-	//  type: object
-	//    "$ref": "#/definitions/ErrorResponse"
 	Body *ErrorResponse
 }
 
-// swagger: model
+// swagger:model
 // represents an order whether a buy or sell
 type Order struct {
 	// enum 0 for sell and 1 for buy
+	// Side
 	// required: true
+	// example: 1
 	Side int32 `json:"side"`
 
 	// order id
 	// required: true
+	// example: order-1
 	Id string `json:"id"`
 
 	// time when the order was created
@@ -100,7 +95,8 @@ type Order struct {
 	Price Decimal `json:"price"`
 }
 
-// swagger: model
+// swagger:model
+// in:body
 type LimitOrderResponse struct {
 	// Orders that are done
 	Done []*ob.Order `json:"done"`
@@ -112,15 +108,8 @@ type LimitOrderResponse struct {
 	PartialQuantityProcessed Decimal `json:"partialQuantityProcessed"`
 }
 
-// swagger: response
-type ResLimitOrder struct {
-	// - name: limit order response
-	//  in: body
-	//  description: limit order response
-	LimitOrderResponse *LimitOrderResponse
-}
-
-//  swagger: model
+// swagger:model
+// in:body
 type MarketOrderResponse struct {
 	// The Market Order response
 	// Orders that are done
@@ -136,31 +125,8 @@ type MarketOrderResponse struct {
 	QuantityLeft Decimal `json:"quantityLeft"`
 }
 
-// swagger: response
-type ResMarketOrder struct {
-	// - name: marketorderresponse
-	//  in: body
-	//  description: market order response
-	//  schema:
-	//  type: object
-	//     "$ref": "#/definitions/MarketOrderResponse"
-	MarketOrderResponse *MarketOrderResponse
-}
-
-// swagger:parameters MarketOrderRequest
-type ReqMarketOrderBody struct {
-	// - name: body
-	//  in: query
-	//  description: request body for market order
-	//  schema:
-	//  type: object
-	//     "$ref": "#/definitions/ReqMarketOrderBody"
-	//  required: true
-	MarketOrderRequest *MarketOrderRequest
-}
-
-//  swagger: parameters
-//  Market order request
+// swagger:model
+// Market order request
 type MarketOrderRequest struct {
 
 	// swagger: model
@@ -174,11 +140,11 @@ type MarketOrderRequest struct {
 	Quantity Decimal `json:"quantity"`
 }
 
-// swagger: response Order
+// swagger: model Order
 type OrderResponse struct {
 	// Order response
 	// in: body
-	Order Order
+	Order *Order
 }
 
 type LimitOrderType struct {
@@ -188,8 +154,9 @@ type LimitOrderType struct {
 	Price    Decimal
 }
 
+// swagger:model
+// in:body
 // depth response
-// swagger: response OrderBookDepth
 type OrderBookDepth struct {
 	// bids
 	// swagger: model

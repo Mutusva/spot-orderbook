@@ -68,16 +68,16 @@ func (a *App) Initialize(ctx context.Context, orderBook *ob.OrderBook, rc *rc.Op
 
 //  swagger:route POST /processLimitOrder processLimitOrder
 //  Create a new limit order
-//  responses:
+//  Responses:
 //    401: ErrorResponse
 //    404: ErrorResponse
 //    500: ErrorResponse
-//    200: body:ResLimitOrder
+//    200: body:LimitOrderResponse
 //   Parameters:
-//     + name: LimitOrderRequest
+//     + name: LimitOrder
 //       in: body
 //       required: true
-//       type: LimitOrderRequest
+//       type: LimitOrder
 
 // ProcessLimitOrder create a limit order for processing
 func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
@@ -116,15 +116,14 @@ func (a *App) Health(w http.ResponseWriter, r *http.Request) {
 
 //  swagger:route POST /processMarketOrder processMarketOrder
 //  Create a new market order for processing
-//  responses:
+//  Responses:
 //    401: ErrorResponse
-//    200: ResMarketOrder
+//    200: body:MarketOrderResponse
 //   Parameters:
-//     + name: market order
+//     + name: MarketOrderRequest
 //       in: body
 //       required: true
 //       type: MarketOrderRequest
-//       format: object
 
 // ProcessMarketOrder create a market order for processing
 func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {

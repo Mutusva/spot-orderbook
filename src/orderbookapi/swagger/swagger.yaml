@@ -10,10 +10,7 @@ definitions:
   LimitOrder:
     properties:
       order_id:
-        description: |-
-          order id
-
-          in: query
+        description: OrderId
         example: order-1
         type: string
         x-go-name: OrderId
@@ -24,18 +21,33 @@ definitions:
       side:
         description: |-
           enum 0 for sell and 1 for buy
-
-          in: query
+          Side
         example: 0
         format: int32
         type: integer
         x-go-name: Side
+    required:
+    - side
+    - order_id
+    - quantity
+    - price
+    type: object
+    x-go-package: spotob/src/models
+  LimitOrderResponse:
+    properties:
+      done:
+        description: Orders that are done
+        items:
+          $ref: '#/definitions/Order'
+        type: array
+        x-go-name: Done
+      partial:
+        $ref: '#/definitions/Order'
+      partialQuantityProcessed:
+        $ref: '#/definitions/Decimal'
     type: object
     x-go-package: spotob/src/models
   MarketOrderRequest:
-    description: |-
-      swagger: parameters
-      Market order request
     properties:
       quantity:
         $ref: '#/definitions/Decimal'
@@ -51,6 +63,63 @@ definitions:
     - quantity
     type: object
     x-go-package: spotob/src/models
+  MarketOrderResponse:
+    properties:
+      done:
+        description: |-
+          The Market Order response
+          Orders that are done
+        items:
+          $ref: '#/definitions/Order'
+        type: array
+        x-go-name: Done
+      partial:
+        $ref: '#/definitions/Order'
+      partialQuantityProcessed:
+        $ref: '#/definitions/Decimal'
+      quantityLeft:
+        $ref: '#/definitions/Decimal'
+    type: object
+    x-go-package: spotob/src/models
+  Order:
+    description: Order strores information about request
+    required:
+    - side
+    - id
+    - timestamp
+    - quantity
+    - price
+    type: object
+    x-go-package: github.com/muzykantov/orderbook
+  OrderBookDepth:
+    properties:
+      asks:
+        description: |-
+          asks
+          swagger: model
+        items:
+          $ref: '#/definitions/PriceLevel'
+        type: array
+        x-go-name: Asks
+      bids:
+        description: |-
+          bids
+          swagger: model
+        items:
+          $ref: '#/definitions/PriceLevel'
+        type: array
+        x-go-name: Bids
+    type: object
+    x-go-package: spotob/src/models
+  PriceLevel:
+    description: PriceLevel contains price and volume in depth
+    properties:
+      price:
+        $ref: '#/definitions/Decimal'
+      quantity:
+        $ref: '#/definitions/Decimal'
+    type: object
+    x-go-package: github.com/muzykantov/orderbook
 info:
   description: Documentation for Spot OrderBook API
   title: Spot OrderBook API
@@ -81,7 +150,9 @@ paths:
       operationId: depth
       responses:
         "200":
-          $ref: '#/responses/OrderBookDepth'
+          description: OrderBookDepth
+          schema:
+            $ref: '#/definitions/OrderBookDepth'
         "401":
           $ref: '#/responses/ErrorResponse'
   /processLimitOrder:
@@ -90,17 +161,17 @@ paths:
       operationId: processLimitOrder
       parameters:
       - in: body
-        name: LimitOrderRequest
+        name: LimitOrder
         required: true
         schema:
-          $ref: '#/definitions/LimitOrderRequest'
+          $ref: '#/definitions/LimitOrder'
           type: object
         type: object
       responses:
         "200":
-          description: ResLimitOrder
+          description: LimitOrderResponse
           schema:
-            $ref: '#/definitions/ResLimitOrder'
+            $ref: '#/definitions/LimitOrderResponse'
         "401":
           $ref: '#/responses/ErrorResponse'
         "404":
@@ -113,16 +184,17 @@ paths:
       operationId: processMarketOrder
       parameters:
       - in: body
-        name: market order
+        name: MarketOrderRequest
         required: true
         schema:
           $ref: '#/definitions/MarketOrderRequest'
-          format: object
           type: object
         type: object
       responses:
         "200":
-          $ref: '#/responses/ResMarketOrder'
+          description: MarketOrderResponse
+          schema:
+            $ref: '#/definitions/MarketOrderResponse'
         "401":
           $ref: '#/responses/ErrorResponse'
 produces:
