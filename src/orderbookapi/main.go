@@ -22,7 +22,7 @@ var obKey = "orderbook"
 func main() {
 
 	port := flag.String("server_port", "8080", "the port for the server")
-	environment := flag.String("env", "dev", "redis host")
+	environment := flag.String("env", "local", "redis host")
 	channel := flag.String("redis_channel", "orderbook", "redis order book channel")
 	flag.Parse()
 

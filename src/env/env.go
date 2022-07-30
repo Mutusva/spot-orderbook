@@ -41,3 +41,7 @@ func setEnvironmentVariable(env string) {
 func IsProd() bool {
 	return os.Getenv("ENV") == string(PROD)
 }
+
+func IsDev() bool {
+	return os.Getenv("ENV") == string(DEV)
+}

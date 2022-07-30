@@ -90,16 +90,17 @@ paths:
       operationId: processLimitOrder
       parameters:
       - in: body
-        name: limit order
+        name: LimitOrderRequest
         required: true
         schema:
-          $ref: '#/definitions/object'
-          format: LimitOrderRequest
+          $ref: '#/definitions/LimitOrderRequest'
           type: object
         type: object
       responses:
         "200":
-          $ref: '#/responses/ResLimitOrder'
+          description: ResLimitOrder
+          schema:
+            $ref: '#/definitions/ResLimitOrder'
         "401":
           $ref: '#/responses/ErrorResponse'
         "404":

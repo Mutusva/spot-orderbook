@@ -50,7 +50,7 @@ func (a *App) initializeRoutes() {
 	// sh := middleware.Redoc(opts, nil)
 
 	swaggerPath := "./swagger/"
-	if !env.IsProd() {
+	if env.IsDev() {
 		swaggerPath = "./src/orderbookapi/swagger/"
 	}
 
@@ -72,13 +72,12 @@ func (a *App) Initialize(ctx context.Context, orderBook *ob.OrderBook, rc *rc.Op
 //    401: ErrorResponse
 //    404: ErrorResponse
 //    500: ErrorResponse
-//    200: ResLimitOrder
+//    200: body:ResLimitOrder
 //   Parameters:
-//     + name: limit order
+//     + name: LimitOrderRequest
 //       in: body
 //       required: true
-//       type: object
-//       format: LimitOrderRequest
+//       type: LimitOrderRequest
 
 // ProcessLimitOrder create a limit order for processing
 func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
