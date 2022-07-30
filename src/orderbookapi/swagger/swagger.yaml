@@ -90,21 +90,18 @@ definitions:
     - quantity
     - price
     type: object
+    x-go-name: OrderResponse
     x-go-package: github.com/muzykantov/orderbook
   OrderBookDepth:
     properties:
       asks:
-        description: |-
-          asks
-          swagger: model
+        description: asks
         items:
           $ref: '#/definitions/PriceLevel'
         type: array
         x-go-name: Asks
       bids:
-        description: |-
-          bids
-          swagger: model
+        description: bids
         items:
           $ref: '#/definitions/PriceLevel'
         type: array
@@ -140,11 +137,11 @@ paths:
         type: integer
       responses:
         "200":
-          $ref: '#/responses/order'
+          description: Order
+          schema:
+            $ref: '#/definitions/Order'
         "401":
           $ref: '#/responses/ErrorResponse'
-      tags:
-      - order
   /depth:
     get:
       operationId: depth

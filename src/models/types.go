@@ -69,6 +69,7 @@ type ValidationError struct {
 }
 
 // swagger:model
+// in:body
 // represents an order whether a buy or sell
 type Order struct {
 	// enum 0 for sell and 1 for buy
@@ -140,7 +141,7 @@ type MarketOrderRequest struct {
 	Quantity Decimal `json:"quantity"`
 }
 
-// swagger: model Order
+// swagger:model Order
 type OrderResponse struct {
 	// Order response
 	// in: body
@@ -159,10 +160,8 @@ type LimitOrderType struct {
 // depth response
 type OrderBookDepth struct {
 	// bids
-	// swagger: model
 	Bids []*ob.PriceLevel `json:"bids"`
 	// asks
-	// swagger: model
 	Asks []*ob.PriceLevel `json:"asks"`
 }
 

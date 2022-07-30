@@ -155,9 +155,9 @@ func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// swagger:route GET /cancelOrder/{id} order cancelOrder
+// swagger:route GET /cancelOrder/{id} cancelOrder
 //   Responses:
-//     200: order
+//     200: body:Order
 //     401: ErrorResponse
 //   Parameters:
 //     + name: order id
@@ -177,13 +177,7 @@ func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	order := obs.CancelOrder(a.OrderBook, orderId)
-	respondWithJSON(w, http.StatusOK, models.Order{
-		Side:      int32(order.Side()),
-		Id:        order.ID(),
-		Timestamp: order.Time(),
-		Quantity:  order.Quantity(),
-		Price:     order.Price(),
-	})
+	respondWithJSON(w, http.StatusOK, order)
 }
 
 // swagger:route GET /depth depth
