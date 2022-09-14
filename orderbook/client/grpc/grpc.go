@@ -6,18 +6,17 @@ import (
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
 	"log"
-	ob "spotob/orderbook"
 	"spotob/orderbook/models"
 	pb "spotob/orderbook/orderbookpb"
 )
 
-type orderBookgRPCClient struct {
+type OrderBookgRPCClient struct {
 	Ob       *orderbook.OrderBook
 	RpcConn  *grpc.ClientConn
 	ObClient pb.OrderBookgRPCServiceClient
 }
 
-func (c *orderBookgRPCClient) ProcessLimitOrder(ctx context.Context, req models.LimitOrder) (*models.LimitOrderResponse, error) {
+func (c *OrderBookgRPCClient) ProcessLimitOrder(ctx context.Context, req models.LimitOrder) (*models.LimitOrderResponse, error) {
 	//Todo : Add some validation
 	res, err := c.ObClient.ProcessLimitOrder(ctx, &pb.LimitOrderRequest{
 		Side:     req.Side,
@@ -51,7 +50,7 @@ func (c *orderBookgRPCClient) ProcessLimitOrder(ctx context.Context, req models.
 	}, nil
 }
 
-func (c *orderBookgRPCClient) ProcessMarketOrder(ctx context.Context, req models.MarketOrderRequest) (*models.MarketOrderResponse, error) {
+func (c *OrderBookgRPCClient) ProcessMarketOrder(ctx context.Context, req models.MarketOrderRequest) (*models.MarketOrderResponse, error) {
 	res, err := c.ObClient.ProcessMarketOrder(ctx, &pb.MarketOrderRequest{
 		Side:     req.Side,
 		Quantity: req.Quantity.String(),
@@ -88,7 +87,7 @@ func (c *orderBookgRPCClient) ProcessMarketOrder(ctx context.Context, req models
 	}, nil
 }
 
-func (c *orderBookgRPCClient) CancelOrder(ctx context.Context, Id string) (*models.Order, error) {
+func (c *OrderBookgRPCClient) CancelOrder(ctx context.Context, Id string) (*models.Order, error) {
 	res, err := c.ObClient.CancelOrder(ctx, &pb.CancelOrderRequest{
 		Id: Id,
 	})
@@ -107,7 +106,7 @@ func (c *orderBookgRPCClient) CancelOrder(ctx context.Context, Id string) (*mode
 	}, nil
 }
 
-func (c *orderBookgRPCClient) Depth(ctx context.Context) (*models.OrderBookDepth, error) {
+func (c *OrderBookgRPCClient) Depth(ctx context.Context) (*models.OrderBookDepth, error) {
 	res, err := c.ObClient.Depth(ctx, &pb.Empty{})
 	if err != nil {
 		return nil, err
@@ -128,7 +127,7 @@ func (c *orderBookgRPCClient) Depth(ctx context.Context) (*models.OrderBookDepth
 	}, nil
 }
 
-func NewOrderBookClient(connStri string, ob *orderbook.OrderBook) (ob.OrderBookClient, error) {
+func NewOrderBookClient(connStri string, ob *orderbook.OrderBook) (*OrderBookgRPCClient, error) {
 	conn, err := grpc.Dial(connStri, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -136,7 +135,7 @@ func NewOrderBookClient(connStri string, ob *orderbook.OrderBook) (ob.OrderBookC
 	}
 
 	obc := pb.NewOrderBookgRPCServiceClient(conn)
-	return &orderBookgRPCClient{
+	return &OrderBookgRPCClient{
 		RpcConn:  conn,
 		ObClient: obc,
 		Ob:       ob,

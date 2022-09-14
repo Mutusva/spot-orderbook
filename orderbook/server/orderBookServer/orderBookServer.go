@@ -3,7 +3,7 @@
 Delete this file not need. use pkg/protocol/grpc/server.go to initialise the server.
 */
 
-package main
+package orderBookServer
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func NewOrderbookRPCServer(orderBook *ob.OrderBook) *grpc.Server {
 }
 
 func RunServer(ctx context.Context, port string, orderBook *ob.OrderBook) error {
-	log.Println("Starting listening on port " + port)
+	log.Println("Starting grpc server on port " + port)
 	listen, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		return err
@@ -54,21 +54,4 @@ func RunServer(ctx context.Context, port string, orderBook *ob.OrderBook) error 
 	// start gRPC server
 	log.Println("starting gRPC server...")
 	return srv.Serve(listen)
-}
-
-func main() {
-	log.Println("Starting listening on port 8080")
-	port := ":8080"
-
-	lis, err := net.Listen("tcp", port)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	log.Printf("Listening on %s", port)
-	orderbook := ob.NewOrderBook()
-	srv := NewOrderbookRPCServer(orderbook)
-
-	if err := srv.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
 }

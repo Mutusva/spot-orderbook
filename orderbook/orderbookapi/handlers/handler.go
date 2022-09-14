@@ -15,15 +15,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 	ob "github.com/muzykantov/orderbook"
 	"log"
 	"net/http"
+	"spotob/orderbook/client/grpc"
 	"spotob/orderbook/env"
 	"spotob/orderbook/models"
-	obs "spotob/orderbook/orderbookservice"
 	rc "spotob/orderbook/redis"
 )
 
@@ -31,6 +30,7 @@ type App struct {
 	OrderBook   *ob.OrderBook
 	Router      *mux.Router
 	RedisClient *rc.OpsClient
+	Client      *grpc.OrderBookgRPCClient
 	ctx         context.Context
 }
 
@@ -58,12 +58,18 @@ func (a *App) initializeRoutes() {
 	a.Router.Handle("/swagger.yaml", http.FileServer(http.Dir(swaggerPath)))
 }
 
-func (a *App) Initialize(ctx context.Context, orderBook *ob.OrderBook, rc *rc.OpsClient) {
+func (a *App) Initialize(ctx context.Context, orderBook *ob.OrderBook, rc *rc.OpsClient, serverPort string) {
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
 	a.OrderBook = orderBook
 	a.RedisClient = rc
 	a.ctx = ctx
+	client, err := grpc.NewOrderBookClient(":"+serverPort, a.OrderBook)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	a.Client = client
 }
 
 //  swagger:route POST /processLimitOrder processLimitOrder
@@ -89,23 +95,20 @@ func (a *App) ProcessLimitOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	lr, err := validateLimitOrderRequest(&limitOrder)
+	_, err := validateLimitOrderRequest(&limitOrder)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	done, partial, partialQuantityProcessed, err := obs.ProcessLimitOrder(a.OrderBook, lr.Side, lr.OrderId, lr.Quantity, lr.Price)
+	res, err := a.Client.ProcessLimitOrder(r.Context(), limitOrder)
+	// done, partial, partialQuantityProcessed, err := obs.ProcessLimitOrder(a.OrderBook, lr.Side, lr.OrderId, lr.Quantity, lr.Price)
 	if err != nil {
 		// log this msg
 		respondWithError(w, http.StatusBadRequest, "error processing limit order")
 		return
 	}
-	respondWithJSON(w, http.StatusOK, models.LimitOrderResponse{
-		Done:                     done,
-		Partial:                  partial,
-		PartialQuantityProcessed: partialQuantityProcessed,
-	})
+	respondWithJSON(w, http.StatusOK, res)
 
 }
 
@@ -140,18 +143,13 @@ func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	done, partial, partialQuantityProcessed, quantityLeft, err := obs.ProcessMarketOrder(a.OrderBook, ob.Side(req.Side), req.Quantity)
+	mor, err := a.Client.ProcessMarketOrder(r.Context(), req)
 	if err != nil {
 		// log this msg
 		respondWithError(w, http.StatusBadRequest, "Error processing market order")
 		return
 	}
-	respondWithJSON(w, http.StatusOK, models.MarketOrderResponse{
-		Done:                     done,
-		Partial:                  partial,
-		PartialQuantityProcessed: partialQuantityProcessed,
-		QuantityLeft:             quantityLeft,
-	})
+	respondWithJSON(w, http.StatusOK, mor)
 
 }
 
@@ -176,7 +174,13 @@ func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order := obs.CancelOrder(a.OrderBook, orderId)
+	order, err := a.Client.CancelOrder(r.Context(), orderId)
+	if err != nil {
+		// log this msg
+		respondWithError(w, http.StatusBadRequest, "Error cancelling order")
+		return
+	}
+
 	respondWithJSON(w, http.StatusOK, order)
 }
 
@@ -184,13 +188,14 @@ func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {
 // Responses:
 //   200: OrderBookDepth
 //   401: ErrorResponse
-func (a *App) Depth(w http.ResponseWriter, _ *http.Request) {
-	asks, bids := obs.Depth(a.OrderBook)
-	depth := models.OrderBookDepth{
-		Asks: asks,
-		Bids: bids,
+func (a *App) Depth(w http.ResponseWriter, r *http.Request) {
+	depthRes, err := a.Client.Depth(r.Context())
+	if err != nil {
+		// log this msg
+		respondWithError(w, http.StatusBadRequest, "Error getting depth")
+		return
 	}
-	respondWithJSON(w, http.StatusOK, depth)
+	respondWithJSON(w, http.StatusOK, depthRes)
 }
 
 func validateLimitOrderRequest(lo *models.LimitOrder) (*models.LimitOrderType, error) {
@@ -240,75 +245,4 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
-}
-
-func (a *App) ProcessOrders(ctx context.Context) {
-
-	defer a.RedisClient.Rc.Close()
-	pubSub := a.RedisClient.Rc.Subscribe(ctx, a.RedisClient.Ch)
-
-	for {
-		msg, err := pubSub.ReceiveMessage(ctx)
-		if err != nil {
-			log.Println(err)
-		}
-
-		data := make(map[string]interface{})
-		err = json.Unmarshal([]byte(msg.Payload), &data)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		mt, ok := data["message_type"].(float64)
-		if !ok {
-			//log.Println(err)
-			continue
-		}
-		// log this to kibana or something
-		fmt.Println(msg.Channel, msg.Payload, mt)
-		ob.NewOrderBook()
-
-		processMessageType(a.OrderBook, models.MessageType(int32(mt)), msg.Payload)
-	}
-}
-
-func processMessageType(o *ob.OrderBook, mt models.MessageType, payload string) {
-	switch mt {
-	case models.LimitOrderMessageType:
-		var orderMsg models.LimitOrderMessage
-		err := json.Unmarshal([]byte(payload), &orderMsg)
-		if err != nil {
-			log.Println(err)
-		}
-
-		_, _, _, err = obs.ProcessLimitOrder(o, ob.Side(orderMsg.Message.Side), orderMsg.Message.OrderId, orderMsg.Message.Quantity, orderMsg.Message.Price)
-		if err != nil {
-			log.Println(err)
-		}
-		break
-
-	case models.MarketOrderMessageType:
-		var orderMsg models.MarketOrderMessage
-		err := json.Unmarshal([]byte(payload), &orderMsg)
-		if err != nil {
-			log.Println(err)
-		}
-
-		_, _, _, _, err = obs.ProcessMarketOrder(o, ob.Side(orderMsg.Message.Side), orderMsg.Message.Quantity)
-		if err != nil {
-			log.Println(err)
-		}
-		break
-
-	case models.CancelOrderMessageType:
-		var orderMsg models.CancelOrderMessage
-		err := json.Unmarshal([]byte(payload), &orderMsg)
-		if err != nil {
-			log.Println(err)
-		}
-		_ = obs.CancelOrder(o, orderMsg.Message)
-		break
-	}
-
 }

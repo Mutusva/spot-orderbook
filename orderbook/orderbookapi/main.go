@@ -14,6 +14,7 @@ import (
 	"spotob/orderbook/env"
 	"spotob/orderbook/orderbookapi/handlers"
 	rc "spotob/orderbook/redis"
+	"spotob/orderbook/server/orderBookServer"
 	"time"
 )
 
@@ -21,7 +22,8 @@ var obKey = "orderbook"
 
 func main() {
 
-	port := flag.String("server_port", "8080", "the port for the server")
+	httpPort := flag.String("http_port", "8080", "the port for the server")
+	serverPort := flag.String("server_port", "9090", "the port for the server")
 	environment := flag.String("env", "local", "redis host")
 	channel := flag.String("redis_channel", "orderbook", "redis order book channel")
 	flag.Parse()
@@ -37,13 +39,13 @@ func main() {
 	redisClient := rc.NewOpsClient(rdb, *channel)
 
 	odb := getSavedOrderBook(ctx, redisClient, obKey)
+	go orderBookServer.RunServer(ctx, *serverPort, odb)
 
 	app := handlers.App{}
-	app.Initialize(ctx, odb, redisClient)
-	fmt.Printf("Listening on port %s\n", *port)
+	app.Initialize(ctx, odb, redisClient, *serverPort)
 
 	s := &http.Server{
-		Addr:         ":" + *port,
+		Addr:         ":" + *httpPort,
 		Handler:      app.Router,
 		IdleTimeout:  120 * time.Second,
 		ReadTimeout:  1 * time.Minute,
@@ -52,6 +54,7 @@ func main() {
 
 	// graceful shut down - allows cleaning up of resources.
 	go func() {
+		fmt.Printf("Listening on port %s\n", *httpPort)
 		err := s.ListenAndServe()
 		if err != nil {
 			log.Fatal(err)

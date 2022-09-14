@@ -33,8 +33,8 @@ func ConvertOrdersToOrderpb(orders []*ob.Order) []*Order {
 }
 
 func OrderpbToOrder(o *Order) (*ob.Order, error) {
-	if o == nil {
-		return nil, errors.New("cannot convert an empty order")
+	if o == nil || o.Id == "" {
+		return nil, nil
 	}
 	q, err := decimal.NewFromString(o.Quantity)
 	if err != nil {
