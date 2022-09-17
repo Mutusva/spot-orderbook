@@ -1,3 +1,3 @@
-go build -o . src/orderbookapi/main.go
+go build -o . orderbook/orderbookapi/main.go
 
-./main -env=dev -server_port=9080
+./main -env=dev -http_port=8080

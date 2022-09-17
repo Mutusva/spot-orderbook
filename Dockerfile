@@ -18,7 +18,7 @@ ENV PORT=8080
 ENV GO111MODULE=on
 
 # Build the Go app
-RUN go build -o . src/orderbookapi/*.go
+RUN go build -o . orderbook/orderbookapi/*.go
 
 COPY orderbook/orderbookapi/swagger/swagger.yaml ./swagger/swagger.yaml
 
