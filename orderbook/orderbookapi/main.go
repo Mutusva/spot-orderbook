@@ -24,10 +24,11 @@ func main() {
 
 	httpPort := flag.String("http_port", "8080", "the port for the server")
 	serverPort := flag.String("server_port", "9090", "the port for the server")
-	environment := flag.String("env", "local", "redis host")
+	environment := flag.String("env", "dev", "redis host")
 	channel := flag.String("redis_channel", "orderbook", "redis order book channel")
 	flag.Parse()
 
+	env.SetEnvironmentVariable(*environment)
 	appConfig := env.GetRedisConfig(*environment)
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     appConfig.RedisHost + ":" + appConfig.RedisPort,

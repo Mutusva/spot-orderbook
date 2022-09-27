@@ -51,7 +51,7 @@ func (a *App) initializeRoutes() {
 
 	swaggerPath := "./swagger/"
 	if env.IsDev() {
-		swaggerPath = "./src/orderbookapi/swagger/"
+		swaggerPath = "./orderbook/orderbookapi/swagger/"
 	}
 
 	a.Router.Handle("/docs", sh)
@@ -162,8 +162,8 @@ func (a *App) ProcessMarketOrder(w http.ResponseWriter, r *http.Request) {
 //       in: path
 //       description: id of the order to cancel
 //       required: true
-//       type: integer
-//       format: int
+//       type: string
+//       format: string
 
 // CancelOrder cancel a specific order by id
 func (a *App) CancelOrder(w http.ResponseWriter, r *http.Request) {

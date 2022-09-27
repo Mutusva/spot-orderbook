@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/go-openapi/runtime v0.24.1
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/muzykantov/orderbook v0.0.0-20190314143358-f93a3deda343
@@ -28,7 +29,6 @@ require (
 	github.com/go-openapi/strfmt v0.21.2 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
 	github.com/go-openapi/validate v0.21.0 // indirect
-	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

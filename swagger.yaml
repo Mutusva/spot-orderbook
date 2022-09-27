@@ -32,7 +32,7 @@ definitions:
     - quantity
     - price
     type: object
-    x-go-package: spotob/orderbook/models
+    x-go-package: spotob/src/models
   LimitOrderResponse:
     properties:
       done:
@@ -46,7 +46,7 @@ definitions:
       partialQuantityProcessed:
         $ref: '#/definitions/Decimal'
     type: object
-    x-go-package: spotob/orderbook/models
+    x-go-package: spotob/src/models
   MarketOrderRequest:
     properties:
       quantity:
@@ -62,7 +62,7 @@ definitions:
     - side
     - quantity
     type: object
-    x-go-package: spotob/orderbook/models
+    x-go-package: spotob/src/models
   MarketOrderResponse:
     properties:
       done:
@@ -80,7 +80,7 @@ definitions:
       quantityLeft:
         $ref: '#/definitions/Decimal'
     type: object
-    x-go-package: spotob/orderbook/models
+    x-go-package: spotob/src/models
   Order:
     description: Order strores information about request
     required:
@@ -107,7 +107,7 @@ definitions:
         type: array
         x-go-name: Bids
     type: object
-    x-go-package: spotob/orderbook/models
+    x-go-package: spotob/src/models
   PriceLevel:
     description: PriceLevel contains price and volume in depth
     properties:
@@ -134,7 +134,7 @@ paths:
           description: id of the order to cancel
           format: string
           type: string
-        type: string
+        type: integer
       responses:
         "200":
           description: Order

@@ -17,7 +17,6 @@ type AppConfig struct {
 
 // GetRedisConfig TODO: read the config from file
 func GetRedisConfig(env string) *AppConfig {
-	setEnvironmentVariable(env)
 	return &AppConfig{
 		RedisHost:     os.Getenv("REDIS_HOST"),
 		RedisPassword: os.Getenv("REDIS_PWD"),
@@ -25,7 +24,7 @@ func GetRedisConfig(env string) *AppConfig {
 	}
 }
 
-func setEnvironmentVariable(env string) {
+func SetEnvironmentVariable(env string) {
 	if env == string(PROD) {
 		os.Setenv("REDIS_HOST", "172.30.29.69")
 		os.Setenv("REDIS_PWD", "Hjyloa4n9lkM4aelooVie8lai2euBhodse")
