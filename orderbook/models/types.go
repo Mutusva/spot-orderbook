@@ -28,6 +28,11 @@ type LimitOrder struct {
 	// example: order-1
 	OrderId string `json:"order_id"`
 
+	// OrderId
+	// required: true
+	// example: order-1
+	TradeId string `json:"trade_id"`
+
 	// quantity
 	// required: true
 	// example: 4.0
